@@ -179,7 +179,7 @@ function confetti(){const cols=["#ffcf3f","#ff4f7b","#2ec4b6","#6c7bff","#fff"];
 /* ===== HOST ===== */
 function host(){
   let g=store.get("gs-host");
-  if(!g||params.get("new")){g={code:String(1000+Math.floor(Math.random()*9000)),key:rid(16)};store.set("gs-host",g);if(params.get("new"))history.replaceState(null,"","?host")}
+  if(!g||params.get("new")){g={code:String(1000+Math.floor(Math.random()*9000)),key:rid(16)};store.set("gs-host",g);if(params.get("new"))history.replaceState(null,"","?host"+(SET?"&set="+SET:""))}
   const ref=db.ref("games/"+g.code);
   let S={phase:"lobby",round:0,endsAt:0,pick:null,picked:{}},players={},votes={},tickT=null,lastTick=-1;
   const joinUrl=location.origin+location.pathname+"?g="+g.code;
@@ -190,7 +190,7 @@ function host(){
   $("#root").innerHTML=`<div class="host"><div class="top"><div class="logo">🌏 ${SET?SETS[SET]:"Culture Game Show"}</div><div class="sp"></div><span class="pill" id="pcount"></span><span class="pill">Code <b>${g.code}</b></span><button class="icon" id="mute" title="Sound">🔊</button><button class="icon" id="cfg" title="Settings">⚙️ Settings</button><button class="icon" id="newg" title="New game">↺</button></div><div id="view" style="flex:1;display:flex;flex-direction:column"></div></div><div id="spot" class="spot hidden"></div>`;
   $("#mute").onclick=()=>{muted=!muted;$("#mute").textContent=muted?"🔇":"🔊"};
   $("#cfg").onclick=settings;document.body.classList.toggle("nokr",!cfg.kr);
-  $("#newg").onclick=()=>{if(confirmTwice($("#newg")))location.href="?host&new=1"};
+  $("#newg").onclick=()=>{if(confirmTwice($("#newg")))location.href="?host&new=1"+(SET?"&set="+SET:"")};
   function confirmTwice(b){if(b.dataset.arm){return true}b.dataset.arm=1;b.textContent="Sure?";setTimeout(()=>{delete b.dataset.arm;b.textContent="↺"},2500);return false}
   const roundVotes=()=>votes["r"+S.round]||{};
   function tally(){const t=[0,0,0,0];Object.values(roundVotes()).forEach(v=>{if(t[v]!=null)t[v]++});return t}
