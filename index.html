@@ -102,6 +102,19 @@ button{font:inherit;color:inherit;cursor:pointer}
 .rlist img{width:64px;height:44px;object-fit:cover;border-radius:8px;flex:none}
 .sheet .big{font-size:20px;padding:12px 26px;margin-top:16px}
 .nokr .host .kr{display:none}
+.starters{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:1300px;position:relative}
+.starters span{background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.35);border-radius:14px;padding:8px 18px;font-weight:800;font-size:clamp(16px,1.7vw,26px)}
+.starters b{display:block;width:100%;text-align:center;font-size:clamp(13px,1.1vw,17px);opacity:.7;letter-spacing:.05em;text-transform:uppercase}
+.pstart{display:grid;gap:8px;width:100%}.pstart span{background:rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.3);border-radius:12px;padding:8px 12px;font-weight:800}
+.heads{background:#fff3cd;color:#5c4400;border-radius:18px;padding:14px 20px;font-weight:900;font-size:clamp(16px,1.5vw,24px);margin-top:3vh;max-width:760px}
+.heads .kr{color:#7a5c00}
+.awards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2vw;width:100%;max-width:1500px}
+.award{background:#fff;color:#1b0f3b;border-radius:22px;overflow:hidden;box-shadow:0 0 0 6px var(--c),0 20px 40px rgba(0,0,0,.4);animation:pop .5s backwards}
+.award .h{background:var(--c);color:#fff;font-weight:900;font-size:clamp(16px,1.5vw,24px);padding:10px 14px}
+.award img{display:block;width:100%;height:22vh;object-fit:cover}
+.award .t{padding:10px 14px;font-weight:800;font-size:clamp(13px,1.1vw,18px);line-height:1.3}
+.award .t b{display:block;font-family:Bungee;font-size:clamp(18px,1.6vw,26px);margin-top:4px}
+@media (max-width:900px){.awards{grid-template-columns:1fr 1fr}}
 .err{color:#ffb3c4;font-weight:800;min-height:1.3em}
 @media (max-width:900px){.lobby,.stagebox{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -134,9 +147,9 @@ const ROUNDS=[
  {set:"places",img:"thumb",en:"In Malaysia, people point with their thumb, not their index finger.",ko:"말레이시아에서는 검지 대신 엄지로 가리켜요.",
   f:["Can you show us? Is there a polite gesture like this in Korea?","Why might pointing with a finger feel rude?","Which Korean gestures might feel strange to visitors?","Would it be hard to change your habit? What would you do?"]},
  {set:"places",img:"tp",en:"In France, toilet paper is often coloured — sometimes pink!",ko:"프랑스에서는 화장지가 색깔이 있는 경우가 많아요. 분홍색도 있어요!",
-  f:["Would you buy coloured toilet paper? What colour?","Why do you think people choose coloured paper?","What is something in Korean homes that visitors find surprising?","Why do you prefer white? Does colour matter to you?"]},
+  f:["Would you buy coloured toilet paper? What colour?","Why do you think people choose coloured paper?","What is something in Korean homes that visitors find surprising?","What colour would you choose instead? Why?"]},
  {set:"places",img:"beer",en:"In the Czech Republic, beer is often cheaper than water in restaurants.",ko:"체코의 식당에서는 맥주가 물보다 싼 경우가 많아요.",
-  f:["What would you order in a Czech restaurant?","Why might beer be so cheap there?","Is there a drink in Korea that is surprisingly cheap?","What would you drink instead? Is free water important to you?"]},
+  f:["What would you like to order to drink there?","Why might beer be so cheap there?","Is there a drink in Korea that is surprisingly cheap?","What would you drink instead? Is free water important to you?"]},
  {set:"food",img:"balut",en:"Philippines: Balut is a developing duck egg that is boiled and eaten from the shell.",ko:"필리핀의 발룻: 부화 중인 오리알을 삶아서 껍질째 먹어요.",
   f:["Would you try it alone or with friends? Why?","Why do you think balut is a popular street food?","Which Korean food might look strange to visitors?","What is a food you will never try? Why?"]},
  {set:"food",img:"snake",en:"Southeast Asia: Snake wine is rice wine with a snake inside. People say it gives energy and helps hair loss.",ko:"동남아시아의 뱀술: 쌀술 안에 뱀이 들어 있어요. 기운을 주고 탈모에 좋다고 해요.",
@@ -163,6 +176,8 @@ const db=firebase.database();
 let offset=0;db.ref(".info/serverTimeOffset").on("value",s=>offset=s.val()||0);
 const now=()=>Date.now()+offset;
 const params=new URLSearchParams(location.search);
+const STARTERS=[["I would love to … because …","It looks … because …","I'd like to try … with …"],["I think it's because …","Maybe people do this because …","In Korea, …"],["It feels strange to me because …","In Korea, we usually …","I've never seen …"],["I wouldn't … because …","I'd rather … instead.","To be honest, …"]];
+const HEADS=`⚠️ Heads up! Some food photos may look strange. "No thanks" is always a fine answer 🙂<span class="kr">일부 음식 사진이 낯설 수 있어요. '사양할게요'도 괜찮아요!</span>`;
 const listOf=S=>(S&&S.list&&S.list.length)?S.list:allRounds();
 const curRound=S=>ROUNDS[listOf(S)[S.round]]||ROUNDS[0];
 const optTag=i=>`<span class="tag" style="background:var(${OPTS[i][3]})">${OPTS[i][0]} ${OPTS[i][1]}</span>`;
@@ -201,12 +216,17 @@ function host(){
       v.innerHTML=`<div class="lobby"><div><h1>Game Show!<small>How does it make you feel?<span class="kr">어떤 느낌이 드나요?</span></small></h1>
         <div class="steps" style="justify-content:flex-start;margin-top:3vh"><span>📷 Scan the QR code<span class="kr">QR 코드를 스캔하세요</span></span><span>✏️ Type your name<span class="kr">이름을 쓰세요</span></span></div>
         <div class="players">${Object.values(players).map(n=>`<span>${esc(n)}</span>`).join("")||'<span style="opacity:.5">Waiting for players…</span>'}</div>
+        ${startList().some(i=>ROUNDS[i].set==="food")?`<div class="heads">${HEADS}</div>`:""}
         <div style="margin-top:4vh"><button class="big" id="start" ${Object.keys(players).length?"":"disabled"}>Start the show ▶</button></div></div>
         <div class="join"><div id="qr"></div><div class="code">${g.code}</div><div class="url">${esc(joinUrl.replace(/^https?:\/\//,""))}</div></div></div>`;
       new QRCode($("#qr"),{text:joinUrl,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
       $("#start").onclick=()=>{S.list=startList();S.picked={};S.set=SET;openRound(0)};
     } else if(S.phase==="end"){
-      v.innerHTML=`<div class="end"><h1>That's a wrap!</h1><div class="q">Thanks for playing, everyone 👏<span class="kr">참여해 주셔서 감사합니다!</span></div><button class="big alt" id="again">Play again</button></div>`;
+      const L=listOf(S),AW=[["😍 Most loved","가장 좋아한 것"],["🤔 Most interesting","가장 흥미로운 것"],["😮 Strangest","가장 이상한 것"],["🙅 Biggest “No thanks”","가장 사양한 것"]];
+      const stats=L.map((ri,r)=>{const t=[0,0,0,0];Object.values(votes["r"+r]||{}).forEach(x=>{if(t[x]!=null)t[x]++});return{ri,t,tot:t.reduce((a,b)=>a+b,0)}}).filter(x=>x.tot);
+      const cards=OPTS.map((o,i)=>{let best=null;stats.forEach(x=>{if(x.t[i]&&(!best||x.t[i]/x.tot>best.t[i]/best.tot))best=x});if(!best)return"";const Rr=ROUNDS[best.ri];
+        return `<div class="award" style="--c:var(${o[3]});animation-delay:${i*.25}s"><div class="h">${AW[i][0]}<span class="kr">${AW[i][1]}</span></div><img src="img/${Rr.img}.jpg" alt=""><div class="t">${esc(Rr.en)}<b>${best.t[i]} / ${best.tot}</b></div></div>`}).join("");
+      v.innerHTML=`<div class="end"><h1 style="font-size:clamp(40px,5vw,84px)">Class results!</h1>${cards?`<div class="awards">${cards}</div><div class="q">Do you agree with the class? Why or why not?<span class="kr">반 친구들의 결과에 동의하나요? 왜 그런가요?</span></div>`:`<div class="q">Thanks for playing, everyone 👏<span class="kr">참여해 주셔서 감사합니다!</span></div>`}<button class="big alt" id="again">Play again</button></div>`;
       $("#again").onclick=()=>{put({phase:"lobby",round:0,pick:null,picked:{}});ref.child("votes").remove();render()};confetti();sfx.win();
     } else {
       const R=curRound(S);
@@ -276,7 +296,7 @@ function host(){
   function renderSpot(){
     const sp=$("#spot");if(!S.pick||S.phase!=="results"){sp.classList.add("hidden");return}
     const R=curRound(S),o=S.pick.opt;sp.classList.remove("hidden");
-    sp.innerHTML=`<div class="reel">${esc(S.pick.name)}</div><div>${optTag(o)}</div><div class="fq">${esc(R.f[o])}</div>
+    sp.innerHTML=`<div class="reel">${esc(S.pick.name)}</div><div>${optTag(o)}</div><div class="fq">${esc(R.f[o])}</div><div class="starters"><b>Sentence starters</b>${STARTERS[o].map(t=>`<span>${esc(t)}</span>`).join("")}</div>
       <div class="btns"><button class="big alt" id="again2">🎤 Pick another</button><button class="big" id="close">Back ✓</button></div>`;
     $("#close").onclick=()=>{put({pick:null});renderSpot()};$("#again2").onclick=()=>{put({pick:null});spin()};
   }
@@ -306,11 +326,11 @@ function player(){
   let lastRound=-1;
   async function draw(){
     if(!S)return;
-    if(S.phase==="lobby"||S.phase==="end"){R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">${S.phase==="end"?"🎉":"⏳"}</div><div style="font-weight:900;font-size:24px">${S.phase==="end"?"Thanks for playing!":"You're in, "+esc(me.name)+"!"}</div><div class="kr" style="font-size:17px">${S.phase==="end"?"참여해 주셔서 감사합니다!":"화면을 보세요. 곧 시작해요!"}</div></div></div>`;return}
+    if(S.phase==="lobby"||S.phase==="end"){R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">${S.phase==="end"?"🎉":"⏳"}</div><div style="font-weight:900;font-size:24px">${S.phase==="end"?"Thanks for playing!":"You're in, "+esc(me.name)+"!"}</div><div class="kr" style="font-size:17px">${S.phase==="end"?"참여해 주셔서 감사합니다!":"화면을 보세요. 곧 시작해요!"}</div>${S.phase==="lobby"&&S.set==="food"?`<div class="card" style="background:#fff3cd;color:#5c4400;font-weight:800">${HEADS}</div>`:""}</div></div>`;return}
     const Rd=curRound(S);
     if(S.round!==lastRound){lastRound=S.round;const v=await db.ref(`games/${code}/votes/r${S.round}/${me.pid}`).once("value");myVote=v.val()}
     if(S.pick&&S.pick.pid===me.pid&&S.phase==="results"){
-      R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">🎤</div><div class="bung" style="font-size:28px;color:var(--gold)">You're in the spotlight!</div><div class="kr" style="font-size:17px">당신 차례예요!</div><div class="card" style="font-weight:900;font-size:21px">${esc(Rd.f[S.pick.opt])}</div></div></div>`;if(navigator.vibrate)navigator.vibrate([120,60,120]);return}
+      R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">🎤</div><div class="bung" style="font-size:28px;color:var(--gold)">You're in the spotlight!</div><div class="kr" style="font-size:17px">당신 차례예요!</div><div class="card" style="font-weight:900;font-size:21px">${esc(Rd.f[S.pick.opt])}</div><div class="pstart"><div style="font-weight:800;opacity:.7;font-size:14px">SENTENCE STARTERS · 문장 시작</div>${STARTERS[S.pick.opt].map(t=>`<span>${esc(t)}</span>`).join("")}</div></div></div>`;if(navigator.vibrate)navigator.vibrate([120,60,120]);return}
     const locked=S.phase!=="vote";
     R.innerHTML=`<div class="ply"><div class="logo">🌏 Round ${S.round+1} / ${listOf(S).length}</div>
       <div class="thumb"><img src="img/${Rd.img}.jpg" alt=""></div><div class="pq">${esc(Rd.en)}<span class="kr">${esc(Rd.ko)}</span></div>
