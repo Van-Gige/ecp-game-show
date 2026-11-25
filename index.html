@@ -115,25 +115,44 @@ button{font:inherit;color:inherit;cursor:pointer}
 <script>
 {
 const DB_URL="https://ecp-game-show-default-rtdb.asia-southeast1.firebasedatabase.app";
+const SETS={places:"Different Places, Different Ways",food:"Unusual Foods Around the World"};
+const SET=SETS[new URLSearchParams(location.search).get("set")]?new URLSearchParams(location.search).get("set"):null;
 const DEF={timer:0,auto:true,fresh:true,kr:true,rounds:null};
 let cfg={...DEF,...(JSON.parse(localStorage.getItem("gs-cfg")||"null")||{})};
 const allRounds=()=>ROUNDS.map((_,i)=>i);
+const startList=()=>{let l=(cfg.rounds&&cfg.rounds.length)?cfg.rounds:allRounds();if(SET){const f=l.filter(i=>ROUNDS[i].set===SET);l=f.length?f:allRounds().filter(i=>ROUNDS[i].set===SET)}return l};
 const OPTS=[["😍","Love it","좋아요","--o0"],["🤔","Interesting","흥미로워요","--o1"],["😮","Strange","이상해요","--o2"],["🙅","No thanks","사양할게요","--o3"]];
 const ROUNDS=[
- {img:"nz",en:"In New Zealand, many people walk barefoot outside — to school or the supermarket.",ko:"뉴질랜드에서는 많은 사람들이 맨발로 학교나 마트에 가요.",
+ {set:"places",img:"nz",en:"In New Zealand, many people walk barefoot outside — to school or the supermarket.",ko:"뉴질랜드에서는 많은 사람들이 맨발로 학교나 마트에 가요.",
   f:["Where would you like to walk barefoot? Why?","Why do you think New Zealanders do this?","What feels strange about it? Where do Koreans take off their shoes?","What worries you about it? Where do you like to be barefoot?"]},
- {img:"spain",en:"In Spain, dinner often starts at 9–11 pm.",ko:"스페인에서는 저녁 식사를 보통 밤 9~11시에 시작해요.",
+ {set:"places",img:"spain",en:"In Spain, dinner often starts at 9–11 pm.",ko:"스페인에서는 저녁 식사를 보통 밤 9~11시에 시작해요.",
   f:["What would you do in the evening before a late dinner?","Why do you think dinner is so late in Spain?","What time do you usually eat dinner? What would be hard about eating late?","What would you do if a Spanish friend invited you to dinner at 10 pm?"]},
- {img:"nl",en:"In the Netherlands, people ride bikes everywhere.",ko:"네덜란드에서는 사람들이 어디든 자전거를 타고 다녀요.",
+ {set:"places",img:"nl",en:"In the Netherlands, people ride bikes everywhere.",ko:"네덜란드에서는 사람들이 어디든 자전거를 타고 다녀요.",
   f:["Would you ride a bike to work or school? Why?","Why do you think cycling is so popular there?","What would make cycling difficult in your city?","How do you prefer to get around? Why?"]},
- {img:"pharmacy",en:"In some countries, you can buy many medicines without a doctor's prescription.",ko:"어떤 나라에서는 처방전 없이 많은 약을 살 수 있어요.",
+ {set:"places",img:"pharmacy",en:"In some countries, you can buy many medicines without a doctor's prescription.",ko:"어떤 나라에서는 처방전 없이 많은 약을 살 수 있어요.",
   f:["Why might this be convenient?","How is buying medicine different in Korea?","What could be a problem with this system?","Would you rather see a doctor first? Why?"]},
- {img:"thumb",en:"In Malaysia, people point with their thumb, not their index finger.",ko:"말레이시아에서는 검지 대신 엄지로 가리켜요.",
+ {set:"places",img:"thumb",en:"In Malaysia, people point with their thumb, not their index finger.",ko:"말레이시아에서는 검지 대신 엄지로 가리켜요.",
   f:["Can you show us? Is there a polite gesture like this in Korea?","Why might pointing with a finger feel rude?","Which Korean gestures might feel strange to visitors?","Would it be hard to change your habit? What would you do?"]},
- {img:"tp",en:"In France, toilet paper is often coloured — sometimes pink!",ko:"프랑스에서는 화장지가 색깔이 있는 경우가 많아요. 분홍색도 있어요!",
+ {set:"places",img:"tp",en:"In France, toilet paper is often coloured — sometimes pink!",ko:"프랑스에서는 화장지가 색깔이 있는 경우가 많아요. 분홍색도 있어요!",
   f:["Would you buy coloured toilet paper? What colour?","Why do you think people choose coloured paper?","What is something in Korean homes that visitors find surprising?","Why do you prefer white? Does colour matter to you?"]},
- {img:"beer",en:"In the Czech Republic, beer is often cheaper than water in restaurants.",ko:"체코의 식당에서는 맥주가 물보다 싼 경우가 많아요.",
-  f:["What would you order in a Czech restaurant?","Why might beer be so cheap there?","Is there a drink in Korea that is surprisingly cheap?","What would you drink instead? Is free water important to you?"]}
+ {set:"places",img:"beer",en:"In the Czech Republic, beer is often cheaper than water in restaurants.",ko:"체코의 식당에서는 맥주가 물보다 싼 경우가 많아요.",
+  f:["What would you order in a Czech restaurant?","Why might beer be so cheap there?","Is there a drink in Korea that is surprisingly cheap?","What would you drink instead? Is free water important to you?"]},
+ {set:"food",img:"balut",en:"Philippines: Balut is a developing duck egg that is boiled and eaten from the shell.",ko:"필리핀의 발룻: 부화 중인 오리알을 삶아서 껍질째 먹어요.",
+  f:["Would you try it alone or with friends? Why?","Why do you think balut is a popular street food?","Which Korean food might look strange to visitors?","What is a food you will never try? Why?"]},
+ {set:"food",img:"snake",en:"Southeast Asia: Snake wine is rice wine with a snake inside. People say it gives energy and helps hair loss.",ko:"동남아시아의 뱀술: 쌀술 안에 뱀이 들어 있어요. 기운을 주고 탈모에 좋다고 해요.",
+  f:["What healthy food or drink do you enjoy?","Why do you think people believe some foods give energy?","Is there a Korean health food that visitors find strange?","What do you say when someone offers you food you don't want?"]},
+ {set:"food",img:"grass",en:"Thailand: Fried grasshoppers are a popular snack.",ko:"태국: 메뚜기 튀김은 인기 있는 간식이에요.",
+  f:["What do you think they taste like?","Why might insects be a good food for the future?","Have you ever eaten 번데기? What was it like?","Would you try one if everyone else did? Why or why not?"]},
+ {set:"food",img:"fish",en:"Japan: \"Dancing fish\" are tiny live fish you swallow from a glass with vinegar and soy sauce.",ko:"일본의 '춤추는 물고기': 식초와 간장을 넣은 잔에서 살아 있는 작은 물고기를 삼켜요.",
+  f:["What is the most adventurous thing you have eaten?","Why do you think people enjoy very fresh, live food?","How is this similar to Korean 산낙지?","Do you prefer raw food or cooked food? Why?"]},
+ {set:"food",img:"grub",en:"Australia: Witchetty grubs are the larvae of a large moth, a traditional food of Aboriginal people.",ko:"호주의 위체티 그럽: 큰 나방의 애벌레로, 원주민의 전통 음식이에요.",
+  f:["Would you eat it raw or cooked?","Why do you think it became a traditional food?","What traditional Korean food do young people rarely eat now?","What Australian food would you rather try?"]},
+ {set:"food",img:"reindeer",en:"Finland: Reindeer sausage is often served with a dip.",ko:"핀란드: 순록 소시지는 소스와 함께 먹는 경우가 많아요.",
+  f:["What would you eat it with?","Why do you think people in Finland eat reindeer?","Is there a food in Korea that surprises visitors?","Which meat do you like best? Why?"]},
+ {set:"food",img:"omelette",en:"Vietnam (Hanoi): Worm omelette is made with worms, eggs, minced pork, green onions and tangerine peel.",ko:"베트남(하노이)의 벌레 오믈렛: 벌레, 달걀, 다진 돼지고기, 파, 귤껍질로 만들어요.",
+  f:["What would you add to make your perfect omelette?","Why do you think worms are used as food?","What Korean egg dish would you show a Vietnamese friend?","What Vietnamese food would you choose instead?"]},
+ {set:"food",img:"century",en:"China: Century eggs are duck, chicken or quail eggs preserved for weeks, eaten in porridge or tofu salad.",ko:"중국의 피단: 오리알, 달걀, 메추리알을 몇 주 동안 보존해서 죽이나 두부 샐러드에 넣어 먹어요.",
+  f:["Would you eat it in porridge or tofu salad?","Why do you think people started preserving eggs?","Which Korean fermented food is similar in some way?","What egg dish do you love?"]}
 ];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -165,10 +184,10 @@ function host(){
   let S={phase:"lobby",round:0,endsAt:0,pick:null,picked:{}},players={},votes={},tickT=null,lastTick=-1;
   const joinUrl=location.origin+location.pathname+"?g="+g.code;
   const put=patch=>{S={...S,...patch};ref.child("state").set({...S,key:g.key})};
-  ref.child("state").once("value",s=>{const v=s.val();if(v&&v.key===g.key){delete v.key;S={...S,...v}}else put({});render()});
+  ref.child("state").once("value",s=>{const v=s.val();if(v&&v.key===g.key){delete v.key;S={...S,...v};if(SET&&S.set!==SET&&(S.phase==="end"||S.phase==="lobby"||S.phase==="results")){S={...S,phase:"lobby",round:0,pick:null,picked:{},set:SET};ref.child("votes").remove();put({})}}else put({set:SET});render()});
   ref.child("players").on("value",s=>{const n=s.val()||{};if(Object.keys(n).length>Object.keys(players).length&&S.phase==="lobby")sfx.join();players=n;render()});
   ref.child("votes").on("value",s=>{votes=s.val()||{};if(S.phase!=="lobby")renderLive()});
-  $("#root").innerHTML=`<div class="host"><div class="top"><div class="logo">🌏 Different Places, Different Ways</div><div class="sp"></div><span class="pill" id="pcount"></span><span class="pill">Code <b>${g.code}</b></span><button class="icon" id="mute" title="Sound">🔊</button><button class="icon" id="cfg" title="Settings">⚙️ Settings</button><button class="icon" id="newg" title="New game">↺</button></div><div id="view" style="flex:1;display:flex;flex-direction:column"></div></div><div id="spot" class="spot hidden"></div>`;
+  $("#root").innerHTML=`<div class="host"><div class="top"><div class="logo">🌏 ${SET?SETS[SET]:"Culture Game Show"}</div><div class="sp"></div><span class="pill" id="pcount"></span><span class="pill">Code <b>${g.code}</b></span><button class="icon" id="mute" title="Sound">🔊</button><button class="icon" id="cfg" title="Settings">⚙️ Settings</button><button class="icon" id="newg" title="New game">↺</button></div><div id="view" style="flex:1;display:flex;flex-direction:column"></div></div><div id="spot" class="spot hidden"></div>`;
   $("#mute").onclick=()=>{muted=!muted;$("#mute").textContent=muted?"🔇":"🔊"};
   $("#cfg").onclick=settings;document.body.classList.toggle("nokr",!cfg.kr);
   $("#newg").onclick=()=>{if(confirmTwice($("#newg")))location.href="?host&new=1"};
@@ -185,7 +204,7 @@ function host(){
         <div style="margin-top:4vh"><button class="big" id="start" ${Object.keys(players).length?"":"disabled"}>Start the show ▶</button></div></div>
         <div class="join"><div id="qr"></div><div class="code">${g.code}</div><div class="url">${esc(joinUrl.replace(/^https?:\/\//,""))}</div></div></div>`;
       new QRCode($("#qr"),{text:joinUrl,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
-      $("#start").onclick=()=>{S.list=(cfg.rounds&&cfg.rounds.length)?cfg.rounds:allRounds();S.picked={};openRound(0)};
+      $("#start").onclick=()=>{S.list=startList();S.picked={};S.set=SET;openRound(0)};
     } else if(S.phase==="end"){
       v.innerHTML=`<div class="end"><h1>That's a wrap!</h1><div class="q">Thanks for playing, everyone 👏<span class="kr">참여해 주셔서 감사합니다!</span></div><button class="big alt" id="again">Play again</button></div>`;
       $("#again").onclick=()=>{put({phase:"lobby",round:0,pick:null,picked:{}});ref.child("votes").remove();render()};confetti();sfx.win();
@@ -238,12 +257,14 @@ function host(){
       <h3>Display</h3>
       <label class="row"><input type="checkbox" id="s-kr" ${cfg.kr?"checked":""}><span>Show Korean translations on the projector<small>Phones always show both</small></span></label>
       <label class="row"><input type="checkbox" id="s-snd" ${muted?"":"checked"}><span>Sound effects</span></label>
-      <h3>Rounds to play <small style="text-transform:none;letter-spacing:0">(starts with the next new show)</small></h3>
-      <div class="rlist">${ROUNDS.map((r,i)=>`<label class="row"><input type="checkbox" class="s-r" value="${i}" ${sel.includes(i)?"checked":""}><img src="img/${r.img}.jpg" alt=""><span>${esc(r.en)}</span></label>`).join("")}</div>
+      <h3>Rounds to play <small style="text-transform:none;letter-spacing:0">(from the next new show; the Places / Foods links in the slides only use their own rounds)</small></h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="icon" style="background:#eee" data-q="all">All</button><button class="icon" style="background:#eee" data-q="places">Places only</button><button class="icon" style="background:#eee" data-q="food">Foods only</button><button class="icon" style="background:#eee" data-q="none">None</button></div>
+      <div class="rlist">${ROUNDS.map((r,i)=>`${i===0||ROUNDS[i-1].set!==r.set?`<h3>${SETS[r.set]}</h3>`:""}<label class="row"><input type="checkbox" class="s-r" value="${i}" ${sel.includes(i)?"checked":""}><img src="img/${r.img}.jpg" alt=""><span>${esc(r.en)}</span></label>`).join("")}</div>
       <div class="err" id="s-err" style="color:#c0103f"></div>
       <button class="big" id="s-save">Save ✓</button> <button class="big alt" id="s-x">Cancel</button></div>`;
     document.body.appendChild(m);
     m.querySelector("#s-x").onclick=()=>m.remove();
+    m.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>m.querySelectorAll(".s-r").forEach(c=>c.checked=b.dataset.q==="all"||ROUNDS[+c.value].set===b.dataset.q));
     m.querySelector("#s-save").onclick=()=>{
       const rs=[...m.querySelectorAll(".s-r:checked")].map(x=>+x.value);
       if(!rs.length)return m.querySelector("#s-err").textContent="Choose at least one round.";
