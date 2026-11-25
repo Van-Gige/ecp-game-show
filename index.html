@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Different Places Game Show</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Game show: deep stage purple, spotlight gold, four answer colours */
+:root{--stage:#1b0f3b;--stage2:#2c1763;--gold:#ffcf3f;--ink:#fff;--soft:#c9bfe8;
+  --o0:#ff4f7b;--o1:#2ec4b6;--o2:#ff9f1c;--o3:#6c7bff}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:radial-gradient(ellipse at 50% -10%,#4a2a9a 0%,var(--stage2) 35%,var(--stage) 75%);color:var(--ink);font:18px/1.35 Nunito,system-ui,sans-serif;overflow-x:hidden}
+h1,h2,.bung{font-family:Bungee,Nunito,sans-serif;font-weight:400;letter-spacing:.01em;margin:0;line-height:1.05}
+button{font:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+.kr{display:block;font-size:.72em;opacity:.8;font-weight:700;word-break:keep-all}
+/* ---------- HOST ---------- */
+.host{min-height:100vh;display:flex;flex-direction:column;padding:2vh 3vw}
+.top{display:flex;align-items:center;gap:16px}
+.top .logo{font-family:Bungee;font-size:clamp(18px,1.8vw,28px);color:var(--gold);text-shadow:0 3px 0 #a1450a}
+.top .sp{flex:1}
+.pill{background:rgba(255,255,255,.12);border-radius:999px;padding:8px 16px;font-weight:800;font-size:clamp(14px,1.2vw,20px)}
+.icon{background:rgba(255,255,255,.12);border:0;border-radius:12px;padding:8px 12px;font-size:18px}
+.lobby{flex:1;display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;align-items:center}
+.lobby h1{font-size:clamp(40px,6vw,96px);color:var(--gold);text-shadow:0 6px 0 #a1450a,0 0 40px rgba(255,207,63,.35)}
+.lobby h1 small{display:block;font-size:.42em;color:#fff;text-shadow:none;margin-top:12px}
+.join{background:#fff;color:#1b0f3b;border-radius:28px;padding:24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.join #qr{width:min(34vh,360px);height:min(34vh,360px);margin:0 auto}
+.join #qr img,.join #qr canvas{width:100%!important;height:100%!important}
+.join .code{font-family:Bungee;font-size:clamp(32px,4vw,64px);letter-spacing:.12em;margin-top:10px}
+.join .url{font-weight:800;font-size:clamp(13px,1vw,17px);opacity:.7;word-break:break-all}
+.players{display:flex;flex-wrap:wrap;gap:10px;margin-top:3vh;min-height:52px}
+.players span{background:rgba(255,255,255,.14);border-radius:999px;padding:8px 16px;font-weight:900;font-size:clamp(16px,1.5vw,24px);animation:pop .35s}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.big{border:0;border-radius:20px;padding:18px 34px;font-family:Bungee;font-size:clamp(20px,2vw,32px);background:var(--gold);color:#1b0f3b;box-shadow:0 8px 0 #a1450a;transition:transform .1s}
+.big:active{transform:translateY(4px);box-shadow:0 4px 0 #a1450a}
+.big.alt{background:#fff;box-shadow:0 8px 0 #8c7fbf}
+.big:disabled{opacity:.4}
+.round{flex:1;display:grid;grid-template-rows:auto 1fr auto;gap:2vh;padding-top:1vh}
+.q{text-align:center;font-weight:900;font-size:clamp(24px,2.8vw,46px);text-wrap:balance}
+.q .kr{font-size:.6em;margin-top:6px}
+.stagebox{display:grid;grid-template-columns:1.25fr 1fr;gap:3vw;align-items:center;min-height:0}
+.photo{border-radius:24px;overflow:hidden;box-shadow:0 0 0 8px #fff,0 30px 60px rgba(0,0,0,.5);max-height:56vh;background:#000}
+.photo img{display:block;width:100%;max-height:56vh;object-fit:cover}
+.opts{display:grid;gap:1.6vh}
+.opt{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;border-radius:18px;padding:1.4vh 18px;font-weight:900;font-size:clamp(18px,2vw,32px);background:var(--c);position:relative;overflow:hidden;box-shadow:0 6px 0 rgba(0,0,0,.25)}
+.opt .em{font-size:1.3em}
+.opt .bar{position:absolute;inset:0 auto 0 0;background:rgba(255,255,255,.28);width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.opt .n{font-family:Bungee;position:relative}
+.opt>*{position:relative}
+.foot{display:flex;align-items:center;gap:20px;justify-content:center;flex-wrap:wrap}
+.timer{font-family:Bungee;font-size:clamp(40px,5vw,80px);color:var(--gold);min-width:2.2em;text-align:center}
+.timer.low{color:#ff4f7b;animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:scale(1.12)}}
+.count{font-weight:900;font-size:clamp(18px,1.8vw,28px)}
+/* spotlight */
+.spot{position:fixed;inset:0;z-index:20;background:rgba(10,5,25,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;padding:4vw;text-align:center}
+.spot::before{content:"";position:absolute;inset:0;background:conic-gradient(from 0deg at 50% 120%,transparent 0 40%,rgba(255,207,63,.18) 45%,transparent 50% 100%);pointer-events:none}
+.reel{font-family:Bungee;font-size:clamp(48px,8vw,140px);color:var(--gold);text-shadow:0 8px 0 #a1450a;min-height:1.2em}
+.spot .tag{display:inline-block;border-radius:999px;padding:8px 22px;font-weight:900;font-size:clamp(18px,2vw,30px);background:var(--c)}
+.spot .fq{font-weight:900;font-size:clamp(26px,3.4vw,58px);max-width:1300px;text-wrap:balance}
+.spot .btns{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;position:relative}
+.confetti{position:fixed;top:-20px;width:12px;height:18px;z-index:30;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.end{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;text-align:center}
+.end h1{font-size:clamp(48px,7vw,120px);color:var(--gold);text-shadow:0 6px 0 #a1450a}
+/* ---------- PLAYER ---------- */
+.ply{min-height:100dvh;display:flex;flex-direction:column;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+.ply .logo{font-family:Bungee;color:var(--gold);font-size:20px;text-align:center;text-shadow:0 2px 0 #a1450a;margin:6px 0 16px}
+.card{background:rgba(255,255,255,.1);border-radius:22px;padding:20px}
+.field{width:100%;min-height:56px;border:0;border-radius:16px;padding:12px 16px;font:800 22px Nunito,sans-serif;text-align:center;margin:10px 0}
+.pbtn{width:100%;min-height:60px;border:0;border-radius:18px;background:var(--gold);color:#1b0f3b;font-family:Bungee;font-size:22px;box-shadow:0 6px 0 #a1450a}
+.pbtn:disabled{opacity:.4}
+.center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
+.center .bigem{font-size:72px}
+.thumb{border-radius:16px;overflow:hidden;margin-bottom:12px;box-shadow:0 0 0 4px #fff}
+.thumb img{display:block;width:100%;max-height:28vh;object-fit:cover}
+.pq{font-weight:900;font-size:19px;text-align:center;margin-bottom:12px}
+.pgrid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pv{border:0;border-radius:20px;background:var(--c);font-weight:900;font-size:21px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;box-shadow:0 6px 0 rgba(0,0,0,.3);transition:transform .1s}
+.pv .em{font-size:40px}
+.pv[aria-pressed=true]{outline:5px solid #fff;transform:scale(1.04)}
+.pgrid.locked .pv:not([aria-pressed=true]){opacity:.35}
+.pstat{text-align:center;font-weight:800;margin-top:12px;min-height:1.4em}
+.err{color:#ffb3c4;font-weight:800;min-height:1.3em}
+@media (max-width:900px){.lobby,.stagebox{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+{
+const DB_URL="https://ecp-game-show-default-rtdb.asia-southeast1.firebasedatabase.app";
+const VOTE_SECS=20;
+const OPTS=[["😍","Love it","좋아요","--o0"],["🤔","Interesting","흥미로워요","--o1"],["😮","Strange","이상해요","--o2"],["🙅","No thanks","사양할게요","--o3"]];
+const ROUNDS=[
+ {img:"nz",en:"In New Zealand, many people walk barefoot outside — to school or the supermarket.",ko:"뉴질랜드에서는 많은 사람들이 맨발로 학교나 마트에 가요.",
+  f:["Where would you like to walk barefoot? Why?","Why do you think New Zealanders do this?","What feels strange about it? Where do Koreans take off their shoes?","What worries you about it? Where do you like to be barefoot?"]},
+ {img:"spain",en:"In Spain, dinner often starts at 9–11 pm.",ko:"스페인에서는 저녁 식사를 보통 밤 9~11시에 시작해요.",
+  f:["What would you do in the evening before a late dinner?","Why do you think dinner is so late in Spain?","What time do you usually eat dinner? What would be hard about eating late?","What would you do if a Spanish friend invited you to dinner at 10 pm?"]},
+ {img:"nl",en:"In the Netherlands, people ride bikes everywhere.",ko:"네덜란드에서는 사람들이 어디든 자전거를 타고 다녀요.",
+  f:["Would you ride a bike to work or school? Why?","Why do you think cycling is so popular there?","What would make cycling difficult in your city?","How do you prefer to get around? Why?"]},
+ {img:"pharmacy",en:"In some countries, you can buy many medicines without a doctor's prescription.",ko:"어떤 나라에서는 처방전 없이 많은 약을 살 수 있어요.",
+  f:["Why might this be convenient?","How is buying medicine different in Korea?","What could be a problem with this system?","Would you rather see a doctor first? Why?"]},
+ {img:"thumb",en:"In Malaysia, people point with their thumb, not their index finger.",ko:"말레이시아에서는 검지 대신 엄지로 가리켜요.",
+  f:["Can you show us? Is there a polite gesture like this in Korea?","Why might pointing with a finger feel rude?","Which Korean gestures might feel strange to visitors?","Would it be hard to change your habit? What would you do?"]},
+ {img:"tp",en:"In France, toilet paper is often coloured — sometimes pink!",ko:"프랑스에서는 화장지가 색깔이 있는 경우가 많아요. 분홍색도 있어요!",
+  f:["Would you buy coloured toilet paper? What colour?","Why do you think people choose coloured paper?","What is something in Korean homes that visitors find surprising?","Why do you prefer white? Does colour matter to you?"]},
+ {img:"beer",en:"In the Czech Republic, beer is often cheaper than water in restaurants.",ko:"체코의 식당에서는 맥주가 물보다 싼 경우가 많아요.",
+  f:["What would you order in a Czech restaurant?","Why might beer be so cheap there?","Is there a drink in Korea that is surprisingly cheap?","What would you drink instead? Is free water important to you?"]}
+];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const rid=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>"abcdefghjkmnpqrstuvwxyz23456789"[b%31]).join("");
+firebase.initializeApp({databaseURL:DB_URL});
+const db=firebase.database();
+let offset=0;db.ref(".info/serverTimeOffset").on("value",s=>offset=s.val()||0);
+const now=()=>Date.now()+offset;
+const params=new URLSearchParams(location.search);
+const optTag=i=>`<span class="tag" style="background:var(${OPTS[i][3]})">${OPTS[i][0]} ${OPTS[i][1]}</span>`;
+
+/* ===== sound (host only) ===== */
+let AC=null,muted=false;
+function tone(f,d,type="sine",v=.15,when=0){if(muted)return;try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,AC.currentTime+when);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+when+d);o.connect(g).connect(AC.destination);o.start(AC.currentTime+when);o.stop(AC.currentTime+when+d)}catch(e){}}
+const sfx={tick:()=>tone(880,.08,"square",.05),join:()=>{tone(660,.1);tone(990,.15,"sine",.12,.08)},
+ lock:()=>{tone(392,.15,"sawtooth",.08);tone(523,.15,"sawtooth",.08,.12);tone(784,.35,"sawtooth",.1,.24)},
+ reel:()=>tone(300+Math.random()*500,.05,"triangle",.06),
+ win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.25,"triangle",.12,i*.1))};
+function confetti(){const cols=["#ffcf3f","#ff4f7b","#2ec4b6","#6c7bff","#fff"];for(let i=0;i<80;i++){const c=document.createElement("i");c.className="confetti";c.style.left=Math.random()*100+"vw";c.style.background=cols[i%5];c.style.animationDuration=(1.8+Math.random()*1.6)+"s";c.style.animationDelay=Math.random()*.4+"s";document.body.appendChild(c);setTimeout(()=>c.remove(),4000)}}
+
+/* ===== HOST ===== */
+function host(){
+  let g=store.get("gs-host");
+  if(!g||params.get("new")){g={code:String(1000+Math.floor(Math.random()*9000)),key:rid(16)};store.set("gs-host",g);if(params.get("new"))history.replaceState(null,"","?host")}
+  const ref=db.ref("games/"+g.code);
+  let S={phase:"lobby",round:0,endsAt:0,pick:null,picked:{}},players={},votes={},tickT=null,lastTick=-1;
+  const joinUrl=location.origin+location.pathname+"?g="+g.code;
+  const put=patch=>{S={...S,...patch};ref.child("state").set({...S,key:g.key})};
+  ref.child("state").once("value",s=>{const v=s.val();if(v&&v.key===g.key){delete v.key;S={...S,...v}}else put({});render()});
+  ref.child("players").on("value",s=>{const n=s.val()||{};if(Object.keys(n).length>Object.keys(players).length&&S.phase==="lobby")sfx.join();players=n;render()});
+  ref.child("votes").on("value",s=>{votes=s.val()||{};if(S.phase!=="lobby")renderLive()});
+  $("#root").innerHTML=`<div class="host"><div class="top"><div class="logo">🌏 Different Places, Different Ways</div><div class="sp"></div><span class="pill" id="pcount"></span><span class="pill">Code <b>${g.code}</b></span><button class="icon" id="mute" title="Sound">🔊</button><button class="icon" id="newg" title="New game">↺</button></div><div id="view" style="flex:1;display:flex;flex-direction:column"></div></div><div id="spot" class="spot hidden"></div>`;
+  $("#mute").onclick=()=>{muted=!muted;$("#mute").textContent=muted?"🔇":"🔊"};
+  $("#newg").onclick=()=>{if(confirmTwice($("#newg")))location.href="?host&new=1"};
+  function confirmTwice(b){if(b.dataset.arm){return true}b.dataset.arm=1;b.textContent="Sure?";setTimeout(()=>{delete b.dataset.arm;b.textContent="↺"},2500);return false}
+  const roundVotes=()=>votes["r"+S.round]||{};
+  function tally(){const t=[0,0,0,0];Object.values(roundVotes()).forEach(v=>{if(t[v]!=null)t[v]++});return t}
+  function render(){
+    $("#pcount").textContent=`👥 ${Object.keys(players).length}`;
+    const v=$("#view");clearInterval(tickT);
+    if(S.phase==="lobby"){
+      v.innerHTML=`<div class="lobby"><div><h1>Game Show!<small>How does it make you feel?<span class="kr">어떤 느낌이 드나요?</span></small></h1>
+        <div class="players">${Object.values(players).map(n=>`<span>${esc(n)}</span>`).join("")||'<span style="opacity:.5">Waiting for players…</span>'}</div>
+        <div style="margin-top:4vh"><button class="big" id="start" ${Object.keys(players).length?"":"disabled"}>Start the show ▶</button></div></div>
+        <div class="join"><div id="qr"></div><div class="code">${g.code}</div><div class="url">${esc(joinUrl.replace(/^https?:\/\//,""))}</div></div></div>`;
+      new QRCode($("#qr"),{text:joinUrl,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
+      $("#start").onclick=()=>openRound(0);
+    } else if(S.phase==="end"){
+      v.innerHTML=`<div class="end"><h1>That's a wrap!</h1><div class="q">Thanks for playing, everyone 👏<span class="kr">참여해 주셔서 감사합니다!</span></div><button class="big alt" id="again">Play again</button></div>`;
+      $("#again").onclick=()=>{put({phase:"lobby",round:0,pick:null,picked:{}});ref.child("votes").remove();render()};confetti();sfx.win();
+    } else {
+      const R=ROUNDS[S.round];
+      v.innerHTML=`<div class="round"><div class="q">${esc(R.en)}<span class="kr">${esc(R.ko)}</span></div>
+        <div class="stagebox"><div class="photo"><img src="img/${R.img}.jpg" alt=""></div><div class="opts">${OPTS.map((o,i)=>`<div class="opt" style="--c:var(${o[3]})"><div class="bar" id="b${i}"></div><span class="em">${o[0]}</span><span>${o[1]}<span class="kr">${o[2]}</span></span><span class="n" id="n${i}"></span></div>`).join("")}</div></div>
+        <div class="foot" id="foot"></div></div>`;
+      renderLive();
+      if(S.phase==="vote"){tickT=setInterval(tick,250);tick()}
+    }
+    renderSpot();
+  }
+  function renderLive(){
+    if(S.phase==="lobby"||S.phase==="end"||!$("#foot"))return;
+    const t=tally(),tot=t.reduce((a,b)=>a+b,0),np=Object.keys(players).length,show=S.phase!=="vote";
+    t.forEach((c,i)=>{const b=$("#b"+i),n=$("#n"+i);if(!b)return;b.style.width=show&&tot?(c/tot*100)+"%":"0";n.textContent=show?c:""});
+    const f=$("#foot");
+    if(S.phase==="vote"){f.innerHTML=`<div class="timer" id="tm"></div><div class="count">${tot} / ${np} voted<span class="kr">투표 완료</span></div><button class="big alt" id="lockb">Lock votes 🔒</button>`;$("#lockb").onclick=lock;tick()}
+    else{const last=S.round>=ROUNDS.length-1;f.innerHTML=`<div class="count">${tot} votes</div><button class="big" id="spin" ${tot?"":"disabled"}>🎤 Pick a player!</button><button class="big alt" id="next">${last?"Finish 🏁":"Next round ▶"}</button>`;
+      $("#spin").onclick=spin;$("#next").onclick=()=>last?put({phase:"end",pick:null})||render():openRound(S.round+1)}
+    if(tot>=np&&np&&S.phase==="vote")lock();
+  }
+  function tick(){const left=Math.max(0,Math.ceil((S.endsAt-now())/1000)),el=$("#tm");if(el){el.textContent=left;el.classList.toggle("low",left<=5)}
+    if(left!==lastTick&&left<=5&&left>0)sfx.tick();lastTick=left;if(left<=0&&S.phase==="vote")lock()}
+  function openRound(r){put({phase:"vote",round:r,endsAt:now()+VOTE_SECS*1000,pick:null});ref.child("votes/r"+r).remove();render()}
+  function lock(){if(S.phase!=="vote")return;put({phase:"results"});sfx.lock();render()}
+  function spin(){
+    const rv=roundVotes(),ids=Object.keys(rv).filter(p=>players[p]);if(!ids.length)return;
+    const fresh=ids.filter(p=>!S.picked[p]),pool=fresh.length?fresh:ids,pid=pool[Math.floor(Math.random()*pool.length)];
+    const sp=$("#spot");sp.classList.remove("hidden");sp.innerHTML=`<div class="kr" style="font-size:24px">And the spotlight goes to…</div><div class="reel" id="reel"></div>`;
+    const names=ids.map(p=>players[p]);let i=0,delay=50;
+    const step=()=>{$("#reel").textContent=names[i++%names.length];sfx.reel();delay*=1.12;if(delay<420)setTimeout(step,delay);else land()};
+    const land=()=>{put({phase:"results",pick:{pid,name:players[pid],opt:rv[pid]},picked:{...S.picked,[pid]:true}});sfx.win();confetti();renderSpot()};
+    step();
+  }
+  function renderSpot(){
+    const sp=$("#spot");if(!S.pick||S.phase!=="results"){sp.classList.add("hidden");return}
+    const R=ROUNDS[S.round],o=S.pick.opt;sp.classList.remove("hidden");
+    sp.innerHTML=`<div class="reel">${esc(S.pick.name)}</div><div>${optTag(o)}</div><div class="fq">${esc(R.f[o])}</div>
+      <div class="btns"><button class="big alt" id="again2">🎤 Pick another</button><button class="big" id="close">Back ✓</button></div>`;
+    $("#close").onclick=()=>{put({pick:null});renderSpot()};$("#again2").onclick=()=>{put({pick:null});spin()};
+  }
+}
+
+/* ===== PLAYER ===== */
+function player(){
+  let code=params.get("g")||"",me=null,S=null,myVote=null,unsub=[];
+  const R=$("#root");
+  function joinScreen(err){
+    R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="card" style="width:100%">
+      <div style="font-weight:900;font-size:20px">Join the game<span class="kr">게임 참가</span></div>
+      <input class="field" id="code" inputmode="numeric" maxlength="4" placeholder="Code · 코드" value="${esc(code)}" ${code?'style="display:none"':''}>
+      <input class="field" id="name" maxlength="20" placeholder="Your name · 이름" autocomplete="off">
+      <div class="err" id="err">${err||""}</div><button class="pbtn" id="go">Join ▶</button></div></div></div>`;
+    const saved=store.get("gs-name");if(saved)$("#name").value=saved;
+    $("#go").onclick=async()=>{const c=$("#code").value.trim(),n=$("#name").value.trim().slice(0,20);if(!/^\d{4}$/.test(c))return $("#err").textContent="Check the 4-digit code · 코드를 확인하세요";if(!n)return $("#err").textContent="Type your name · 이름을 쓰세요";
+      $("#go").disabled=true;const st=await db.ref("games/"+c+"/state").once("value");if(!st.exists()){$("#go").disabled=false;return $("#err").textContent="Game not found · 게임을 찾을 수 없어요"}
+      code=c;let ids=store.get("gs-ids")||{};const pid=ids[c]||rid(10);ids[c]=pid;store.set("gs-ids",ids);store.set("gs-name",n);
+      await db.ref(`games/${c}/players/${pid}`).set(n);me={pid,name:n};listen()};
+    $("#name").addEventListener("keydown",e=>{if(e.key==="Enter")$("#go").click()});
+  }
+  function listen(){
+    const sref=db.ref(`games/${code}/state`);
+    sref.on("value",s=>{S=s.val()||{};draw()});
+  }
+  let lastRound=-1;
+  async function draw(){
+    if(!S)return;
+    if(S.phase==="lobby"||S.phase==="end"){R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">${S.phase==="end"?"🎉":"⏳"}</div><div style="font-weight:900;font-size:24px">${S.phase==="end"?"Thanks for playing!":"You're in, "+esc(me.name)+"!"}</div><div class="kr" style="font-size:17px">${S.phase==="end"?"참여해 주셔서 감사합니다!":"화면을 보세요. 곧 시작해요!"}</div></div></div>`;return}
+    const Rd=ROUNDS[S.round];
+    if(S.round!==lastRound){lastRound=S.round;const v=await db.ref(`games/${code}/votes/r${S.round}/${me.pid}`).once("value");myVote=v.val()}
+    if(S.pick&&S.pick.pid===me.pid&&S.phase==="results"){
+      R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">🎤</div><div class="bung" style="font-size:28px;color:var(--gold)">You're in the spotlight!</div><div class="kr" style="font-size:17px">당신 차례예요!</div><div class="card" style="font-weight:900;font-size:21px">${esc(Rd.f[S.pick.opt])}</div></div></div>`;if(navigator.vibrate)navigator.vibrate([120,60,120]);return}
+    const locked=S.phase!=="vote";
+    R.innerHTML=`<div class="ply"><div class="logo">🌏 Round ${S.round+1} / ${ROUNDS.length}</div>
+      <div class="thumb"><img src="img/${Rd.img}.jpg" alt=""></div><div class="pq">${esc(Rd.en)}<span class="kr">${esc(Rd.ko)}</span></div>
+      <div class="pgrid ${locked?"locked":""}">${OPTS.map((o,i)=>`<button class="pv" data-v="${i}" style="--c:var(${o[3]})" aria-pressed="${myVote===i}" ${locked?"disabled":""}><span class="em">${o[0]}</span>${o[1]}<span class="kr">${o[2]}</span></button>`).join("")}</div>
+      <div class="pstat" id="pstat">${locked?(myVote==null?"Votes are locked · 투표 마감":"Locked in! Watch the screen 👀 · 화면을 보세요"):(myVote==null?"How does it make you feel? · 어떤 느낌이에요?":"Voted! You can still change · 바꿀 수 있어요")}</div></div>`;
+    R.querySelectorAll(".pv").forEach(b=>b.onclick=async()=>{const v=+b.dataset.v;myVote=v;R.querySelectorAll(".pv").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.v===v));$("#pstat").textContent="Voted! You can still change · 바꿀 수 있어요";if(navigator.vibrate)navigator.vibrate(30);
+      try{await db.ref(`games/${code}/votes/r${S.round}/${me.pid}`).set(v)}catch(e){$("#pstat").textContent="Not sent — try again · 다시 눌러 주세요"}});
+  }
+  joinScreen();
+}
+if(params.has("host"))host();else player();
+}
+</script>
+</body>
+</html>
