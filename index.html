@@ -39,12 +39,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .big:active{transform:translateY(4px);box-shadow:0 4px 0 #a1450a}
 .big.alt{background:#fff;box-shadow:0 8px 0 #8c7fbf}
 .big:disabled{opacity:.4}
-.round{flex:1;display:grid;grid-template-rows:auto 1fr auto;gap:2vh;padding-top:1vh}
+.round{flex:1;display:grid;grid-template-rows:auto auto 1fr auto;gap:2vh;padding-top:1vh}
 .q{text-align:center;font-weight:900;font-size:clamp(24px,2.8vw,46px);text-wrap:balance}
 .q .kr{font-size:.6em;margin-top:6px}
 .stagebox{display:grid;grid-template-columns:1.25fr 1fr;gap:3vw;align-items:center;min-height:0}
-.photo{border-radius:24px;overflow:hidden;box-shadow:0 0 0 8px #fff,0 30px 60px rgba(0,0,0,.5);max-height:56vh;background:#000}
-.photo img{display:block;width:100%;max-height:56vh;object-fit:cover}
+.photo{border-radius:24px;overflow:hidden;box-shadow:0 0 0 8px #fff,0 30px 60px rgba(0,0,0,.5);max-height:48vh;background:#000}
+.photo img{display:block;width:100%;max-height:48vh;object-fit:cover}
 .opts{display:grid;gap:1.6vh}
 .opt{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;border-radius:18px;padding:1.4vh 18px;font-weight:900;font-size:clamp(18px,2vw,32px);background:var(--c);position:relative;overflow:hidden;box-shadow:0 6px 0 rgba(0,0,0,.25)}
 .opt .em{font-size:1.3em}
@@ -85,6 +85,23 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pv[aria-pressed=true]{outline:5px solid #fff;transform:scale(1.04)}
 .pgrid.locked .pv:not([aria-pressed=true]){opacity:.35}
 .pstat{text-align:center;font-weight:800;margin-top:12px;min-height:1.4em}
+.steps{display:flex;gap:1.2vw;justify-content:center;flex-wrap:wrap}
+.steps span{background:rgba(255,255,255,.12);border-radius:14px;padding:.8vh 1.2vw;font-weight:900;font-size:clamp(14px,1.35vw,22px);transition:opacity .3s,background .3s}
+.steps span.on{background:var(--gold);color:#1b0f3b;box-shadow:0 4px 0 #a1450a}
+.steps span.off{opacity:.35}
+.steps .kr{font-size:.75em}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(10,5,25,.85);display:flex;align-items:center;justify-content:center;padding:3vh}
+.sheet{background:#fff;color:#1b0f3b;border-radius:24px;padding:24px 28px;width:min(720px,100%);max-height:94vh;overflow:auto}
+.sheet h2{font-family:Bungee;font-size:26px;margin-bottom:6px}
+.sheet h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;opacity:.6;margin:18px 0 6px}
+.row{display:flex;align-items:center;gap:12px;padding:8px 0;font-weight:800;font-size:17px;cursor:pointer}
+.row input[type=checkbox]{width:22px;height:22px;flex:none}
+.row select{font:800 16px Nunito,sans-serif;padding:6px 10px;border-radius:10px;margin-left:auto}
+.row small{display:block;font-weight:600;opacity:.65;font-size:13px}
+.rlist .row{border-top:1px solid #eee}
+.rlist img{width:64px;height:44px;object-fit:cover;border-radius:8px;flex:none}
+.sheet .big{font-size:20px;padding:12px 26px;margin-top:16px}
+.nokr .host .kr{display:none}
 .err{color:#ffb3c4;font-weight:800;min-height:1.3em}
 @media (max-width:900px){.lobby,.stagebox{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -98,7 +115,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 <script>
 {
 const DB_URL="https://ecp-game-show-default-rtdb.asia-southeast1.firebasedatabase.app";
-const VOTE_SECS=20;
+const DEF={timer:0,auto:true,fresh:true,kr:true,rounds:null};
+let cfg={...DEF,...(JSON.parse(localStorage.getItem("gs-cfg")||"null")||{})};
+const allRounds=()=>ROUNDS.map((_,i)=>i);
 const OPTS=[["😍","Love it","좋아요","--o0"],["🤔","Interesting","흥미로워요","--o1"],["😮","Strange","이상해요","--o2"],["🙅","No thanks","사양할게요","--o3"]];
 const ROUNDS=[
  {img:"nz",en:"In New Zealand, many people walk barefoot outside — to school or the supermarket.",ko:"뉴질랜드에서는 많은 사람들이 맨발로 학교나 마트에 가요.",
@@ -125,6 +144,8 @@ const db=firebase.database();
 let offset=0;db.ref(".info/serverTimeOffset").on("value",s=>offset=s.val()||0);
 const now=()=>Date.now()+offset;
 const params=new URLSearchParams(location.search);
+const listOf=S=>(S&&S.list&&S.list.length)?S.list:allRounds();
+const curRound=S=>ROUNDS[listOf(S)[S.round]]||ROUNDS[0];
 const optTag=i=>`<span class="tag" style="background:var(${OPTS[i][3]})">${OPTS[i][0]} ${OPTS[i][1]}</span>`;
 
 /* ===== sound (host only) ===== */
@@ -147,8 +168,9 @@ function host(){
   ref.child("state").once("value",s=>{const v=s.val();if(v&&v.key===g.key){delete v.key;S={...S,...v}}else put({});render()});
   ref.child("players").on("value",s=>{const n=s.val()||{};if(Object.keys(n).length>Object.keys(players).length&&S.phase==="lobby")sfx.join();players=n;render()});
   ref.child("votes").on("value",s=>{votes=s.val()||{};if(S.phase!=="lobby")renderLive()});
-  $("#root").innerHTML=`<div class="host"><div class="top"><div class="logo">🌏 Different Places, Different Ways</div><div class="sp"></div><span class="pill" id="pcount"></span><span class="pill">Code <b>${g.code}</b></span><button class="icon" id="mute" title="Sound">🔊</button><button class="icon" id="newg" title="New game">↺</button></div><div id="view" style="flex:1;display:flex;flex-direction:column"></div></div><div id="spot" class="spot hidden"></div>`;
+  $("#root").innerHTML=`<div class="host"><div class="top"><div class="logo">🌏 Different Places, Different Ways</div><div class="sp"></div><span class="pill" id="pcount"></span><span class="pill">Code <b>${g.code}</b></span><button class="icon" id="mute" title="Sound">🔊</button><button class="icon" id="cfg" title="Settings">⚙️ Settings</button><button class="icon" id="newg" title="New game">↺</button></div><div id="view" style="flex:1;display:flex;flex-direction:column"></div></div><div id="spot" class="spot hidden"></div>`;
   $("#mute").onclick=()=>{muted=!muted;$("#mute").textContent=muted?"🔇":"🔊"};
+  $("#cfg").onclick=settings;document.body.classList.toggle("nokr",!cfg.kr);
   $("#newg").onclick=()=>{if(confirmTwice($("#newg")))location.href="?host&new=1"};
   function confirmTwice(b){if(b.dataset.arm){return true}b.dataset.arm=1;b.textContent="Sure?";setTimeout(()=>{delete b.dataset.arm;b.textContent="↺"},2500);return false}
   const roundVotes=()=>votes["r"+S.round]||{};
@@ -158,17 +180,19 @@ function host(){
     const v=$("#view");clearInterval(tickT);
     if(S.phase==="lobby"){
       v.innerHTML=`<div class="lobby"><div><h1>Game Show!<small>How does it make you feel?<span class="kr">어떤 느낌이 드나요?</span></small></h1>
+        <div class="steps" style="justify-content:flex-start;margin-top:3vh"><span>📷 Scan the QR code<span class="kr">QR 코드를 스캔하세요</span></span><span>✏️ Type your name<span class="kr">이름을 쓰세요</span></span></div>
         <div class="players">${Object.values(players).map(n=>`<span>${esc(n)}</span>`).join("")||'<span style="opacity:.5">Waiting for players…</span>'}</div>
         <div style="margin-top:4vh"><button class="big" id="start" ${Object.keys(players).length?"":"disabled"}>Start the show ▶</button></div></div>
         <div class="join"><div id="qr"></div><div class="code">${g.code}</div><div class="url">${esc(joinUrl.replace(/^https?:\/\//,""))}</div></div></div>`;
       new QRCode($("#qr"),{text:joinUrl,width:512,height:512,correctLevel:QRCode.CorrectLevel.M});
-      $("#start").onclick=()=>openRound(0);
+      $("#start").onclick=()=>{S.list=(cfg.rounds&&cfg.rounds.length)?cfg.rounds:allRounds();S.picked={};openRound(0)};
     } else if(S.phase==="end"){
       v.innerHTML=`<div class="end"><h1>That's a wrap!</h1><div class="q">Thanks for playing, everyone 👏<span class="kr">참여해 주셔서 감사합니다!</span></div><button class="big alt" id="again">Play again</button></div>`;
       $("#again").onclick=()=>{put({phase:"lobby",round:0,pick:null,picked:{}});ref.child("votes").remove();render()};confetti();sfx.win();
     } else {
-      const R=ROUNDS[S.round];
+      const R=curRound(S);
       v.innerHTML=`<div class="round"><div class="q">${esc(R.en)}<span class="kr">${esc(R.ko)}</span></div>
+        <div class="steps" id="steps"></div>
         <div class="stagebox"><div class="photo"><img src="img/${R.img}.jpg" alt=""></div><div class="opts">${OPTS.map((o,i)=>`<div class="opt" style="--c:var(${o[3]})"><div class="bar" id="b${i}"></div><span class="em">${o[0]}</span><span>${o[1]}<span class="kr">${o[2]}</span></span><span class="n" id="n${i}"></span></div>`).join("")}</div></div>
         <div class="foot" id="foot"></div></div>`;
       renderLive();
@@ -181,27 +205,56 @@ function host(){
     const t=tally(),tot=t.reduce((a,b)=>a+b,0),np=Object.keys(players).length,show=S.phase!=="vote";
     t.forEach((c,i)=>{const b=$("#b"+i),n=$("#n"+i);if(!b)return;b.style.width=show&&tot?(c/tot*100)+"%":"0";n.textContent=show?c:""});
     const f=$("#foot");
-    if(S.phase==="vote"){f.innerHTML=`<div class="timer" id="tm"></div><div class="count">${tot} / ${np} voted<span class="kr">투표 완료</span></div><button class="big alt" id="lockb">Lock votes 🔒</button>`;$("#lockb").onclick=lock;tick()}
-    else{const last=S.round>=ROUNDS.length-1;f.innerHTML=`<div class="count">${tot} votes</div><button class="big" id="spin" ${tot?"":"disabled"}>🎤 Pick a player!</button><button class="big alt" id="next">${last?"Finish 🏁":"Next round ▶"}</button>`;
+    if(S.phase==="vote"){const timed=S.endsAt>0;
+      f.innerHTML=`<div class="timer ${timed?"":"hidden"}" id="tm"></div><div class="count">${tot} / ${np} voted<span class="kr">투표 완료</span></div>${timed?'<button class="big alt" id="stopt">⏸ Stop timer</button>':'<button class="big alt" id="ten">⏱ 10 seconds left!</button>'}<button class="big" id="lockb">Lock votes 🔒</button>`;
+      $("#lockb").onclick=lock;if(timed)$("#stopt").onclick=()=>{put({endsAt:0});renderLive()};else $("#ten").onclick=()=>{put({endsAt:now()+10000});lastTick=-1;renderLive()};tick()}
+    else{const last=S.round>=listOf(S).length-1;f.innerHTML=`<div class="count">${tot} votes</div><button class="big" id="spin" ${tot?"":"disabled"}>🎤 Pick a player!</button><button class="big alt" id="next">${last?"Finish 🏁":"Next round ▶"}</button>`;
       $("#spin").onclick=spin;$("#next").onclick=()=>last?put({phase:"end",pick:null})||render():openRound(S.round+1)}
-    if(tot>=np&&np&&S.phase==="vote")lock();
+    const st=$("#steps");if(st){const v=S.phase==="vote";st.innerHTML=`<span class="${v?"on":"off"}">① 👀 Look at the photo<span class="kr">사진을 보세요</span></span><span class="${v?"on":"off"}">② 📱 Vote on your phone<span class="kr">휴대폰으로 투표하세요</span></span><span class="${v?"off":"on"}">③ 🎤 If you're picked, answer the question!<span class="kr">뽑히면 질문에 답하세요</span></span>`}
+    if(cfg.auto&&tot>=np&&np&&S.phase==="vote")lock();
   }
-  function tick(){const left=Math.max(0,Math.ceil((S.endsAt-now())/1000)),el=$("#tm");if(el){el.textContent=left;el.classList.toggle("low",left<=5)}
+  function tick(){if(!(S.endsAt>0)){lastTick=-1;return}const left=Math.max(0,Math.ceil((S.endsAt-now())/1000)),el=$("#tm");if(el){el.textContent=left;el.classList.toggle("low",left<=5)}
     if(left!==lastTick&&left<=5&&left>0)sfx.tick();lastTick=left;if(left<=0&&S.phase==="vote")lock()}
-  function openRound(r){put({phase:"vote",round:r,endsAt:now()+VOTE_SECS*1000,pick:null});ref.child("votes/r"+r).remove();render()}
+  function openRound(r){put({phase:"vote",round:r,endsAt:cfg.timer?now()+cfg.timer*1000:0,pick:null});ref.child("votes/r"+r).remove();render()}
   function lock(){if(S.phase!=="vote")return;put({phase:"results"});sfx.lock();render()}
   function spin(){
     const rv=roundVotes(),ids=Object.keys(rv).filter(p=>players[p]);if(!ids.length)return;
-    const fresh=ids.filter(p=>!S.picked[p]),pool=fresh.length?fresh:ids,pid=pool[Math.floor(Math.random()*pool.length)];
-    const sp=$("#spot");sp.classList.remove("hidden");sp.innerHTML=`<div class="kr" style="font-size:24px">And the spotlight goes to…</div><div class="reel" id="reel"></div>`;
+    const fresh=cfg.fresh?ids.filter(p=>!(S.picked||{})[p]):ids,pool=fresh.length?fresh:ids,pid=pool[Math.floor(Math.random()*pool.length)];
+    const sp=$("#spot");sp.classList.remove("hidden");sp.innerHTML=`<div style="font-size:24px;font-weight:800;opacity:.8">And the spotlight goes to…</div><div class="reel" id="reel"></div>`;
     const names=ids.map(p=>players[p]);let i=0,delay=50;
     const step=()=>{$("#reel").textContent=names[i++%names.length];sfx.reel();delay*=1.12;if(delay<420)setTimeout(step,delay);else land()};
-    const land=()=>{put({phase:"results",pick:{pid,name:players[pid],opt:rv[pid]},picked:{...S.picked,[pid]:true}});sfx.win();confetti();renderSpot()};
+    const land=()=>{put({phase:"results",pick:{pid,name:players[pid],opt:rv[pid]},picked:{...(S.picked||{}),[pid]:true}});sfx.win();confetti();renderSpot()};
     step();
+  }
+  function settings(){
+    const m=document.createElement("div");m.className="modal";
+    const sel=cfg.rounds||allRounds();
+    m.innerHTML=`<div class="sheet"><h2>⚙️ Settings</h2><div style="opacity:.7;font-weight:700">Saved on this computer. Changes apply from the next round.</div>
+      <h3>Voting</h3>
+      <label class="row">⏱ Countdown timer<small>&nbsp;</small><select id="s-timer">${[0,10,15,20,30,45,60].map(t=>`<option value="${t}" ${cfg.timer==t?"selected":""}>${t?t+" seconds":"Off (I'll lock it)"}</option>`).join("")}</select></label>
+      <label class="row"><input type="checkbox" id="s-auto" ${cfg.auto?"checked":""}><span>Lock votes automatically when everyone has voted<small>Turn off if you want time to talk before showing results</small></span></label>
+      <h3>Picking players</h3>
+      <label class="row"><input type="checkbox" id="s-fresh" ${cfg.fresh?"checked":""}><span>Pick people who haven't answered yet first<small>Off = anyone who voted can be picked again</small></span></label>
+      <h3>Display</h3>
+      <label class="row"><input type="checkbox" id="s-kr" ${cfg.kr?"checked":""}><span>Show Korean translations on the projector<small>Phones always show both</small></span></label>
+      <label class="row"><input type="checkbox" id="s-snd" ${muted?"":"checked"}><span>Sound effects</span></label>
+      <h3>Rounds to play <small style="text-transform:none;letter-spacing:0">(starts with the next new show)</small></h3>
+      <div class="rlist">${ROUNDS.map((r,i)=>`<label class="row"><input type="checkbox" class="s-r" value="${i}" ${sel.includes(i)?"checked":""}><img src="img/${r.img}.jpg" alt=""><span>${esc(r.en)}</span></label>`).join("")}</div>
+      <div class="err" id="s-err" style="color:#c0103f"></div>
+      <button class="big" id="s-save">Save ✓</button> <button class="big alt" id="s-x">Cancel</button></div>`;
+    document.body.appendChild(m);
+    m.querySelector("#s-x").onclick=()=>m.remove();
+    m.querySelector("#s-save").onclick=()=>{
+      const rs=[...m.querySelectorAll(".s-r:checked")].map(x=>+x.value);
+      if(!rs.length)return m.querySelector("#s-err").textContent="Choose at least one round.";
+      cfg={timer:+m.querySelector("#s-timer").value,auto:m.querySelector("#s-auto").checked,fresh:m.querySelector("#s-fresh").checked,kr:m.querySelector("#s-kr").checked,rounds:rs.length===ROUNDS.length?null:rs};
+      muted=!m.querySelector("#s-snd").checked;$("#mute").textContent=muted?"🔇":"🔊";
+      try{localStorage.setItem("gs-cfg",JSON.stringify(cfg))}catch(e){}
+      document.body.classList.toggle("nokr",!cfg.kr);m.remove();render()};
   }
   function renderSpot(){
     const sp=$("#spot");if(!S.pick||S.phase!=="results"){sp.classList.add("hidden");return}
-    const R=ROUNDS[S.round],o=S.pick.opt;sp.classList.remove("hidden");
+    const R=curRound(S),o=S.pick.opt;sp.classList.remove("hidden");
     sp.innerHTML=`<div class="reel">${esc(S.pick.name)}</div><div>${optTag(o)}</div><div class="fq">${esc(R.f[o])}</div>
       <div class="btns"><button class="big alt" id="again2">🎤 Pick another</button><button class="big" id="close">Back ✓</button></div>`;
     $("#close").onclick=()=>{put({pick:null});renderSpot()};$("#again2").onclick=()=>{put({pick:null});spin()};
@@ -233,12 +286,12 @@ function player(){
   async function draw(){
     if(!S)return;
     if(S.phase==="lobby"||S.phase==="end"){R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">${S.phase==="end"?"🎉":"⏳"}</div><div style="font-weight:900;font-size:24px">${S.phase==="end"?"Thanks for playing!":"You're in, "+esc(me.name)+"!"}</div><div class="kr" style="font-size:17px">${S.phase==="end"?"참여해 주셔서 감사합니다!":"화면을 보세요. 곧 시작해요!"}</div></div></div>`;return}
-    const Rd=ROUNDS[S.round];
+    const Rd=curRound(S);
     if(S.round!==lastRound){lastRound=S.round;const v=await db.ref(`games/${code}/votes/r${S.round}/${me.pid}`).once("value");myVote=v.val()}
     if(S.pick&&S.pick.pid===me.pid&&S.phase==="results"){
       R.innerHTML=`<div class="ply"><div class="logo">🌏 Game Show</div><div class="center"><div class="bigem">🎤</div><div class="bung" style="font-size:28px;color:var(--gold)">You're in the spotlight!</div><div class="kr" style="font-size:17px">당신 차례예요!</div><div class="card" style="font-weight:900;font-size:21px">${esc(Rd.f[S.pick.opt])}</div></div></div>`;if(navigator.vibrate)navigator.vibrate([120,60,120]);return}
     const locked=S.phase!=="vote";
-    R.innerHTML=`<div class="ply"><div class="logo">🌏 Round ${S.round+1} / ${ROUNDS.length}</div>
+    R.innerHTML=`<div class="ply"><div class="logo">🌏 Round ${S.round+1} / ${listOf(S).length}</div>
       <div class="thumb"><img src="img/${Rd.img}.jpg" alt=""></div><div class="pq">${esc(Rd.en)}<span class="kr">${esc(Rd.ko)}</span></div>
       <div class="pgrid ${locked?"locked":""}">${OPTS.map((o,i)=>`<button class="pv" data-v="${i}" style="--c:var(${o[3]})" aria-pressed="${myVote===i}" ${locked?"disabled":""}><span class="em">${o[0]}</span>${o[1]}<span class="kr">${o[2]}</span></button>`).join("")}</div>
       <div class="pstat" id="pstat">${locked?(myVote==null?"Votes are locked · 투표 마감":"Locked in! Watch the screen 👀 · 화면을 보세요"):(myVote==null?"How does it make you feel? · 어떤 느낌이에요?":"Voted! You can still change · 바꿀 수 있어요")}</div></div>`;
